@@ -2,7 +2,8 @@
 //! A deductive logic game where you must guess a number based on clues.
 //! Tags: short, game, puzzle
 
-use std::io;
+use core::{fmt, iter};
+use std::io::{self, Write};
 
 use rand::prelude::SliceRandom;
 
@@ -10,62 +11,12 @@ const NUM_DIGITS: usize = 3; // (!) Try setting this to 1 or 10.
 const MAX_GUESSES: usize = 10; // (!) Try setting this to 1 or 100.
 
 fn main() {
-    println!(
-        "Bagels, a deductive logic game.
-By Prince Muel sam@princemuel.dev
+    print_instructions();
 
-I am thinking of a {NUM_DIGITS}-digit number with no repeated digits.
-Try to guess what it is. Here are some clues:
-When I say:         That means:
-    Pico            One digit is correct but in the wrong position.
-    Fermi           One digit is correct and in the right position.
-    Bagels          No digit is correct.
-
-For example, if the secret number was 248 and your guess was 843, the clues would be Fermi Pico."
-    );
-
-    // Main game loop
     loop {
-        // This stores the secret number the player needs to guess:
-        let secret = get_secret();
-        println!("I have thought up a number.");
-        println!(" You have {MAX_GUESSES} guesses to get it.");
+        play_round();
 
-        let mut guesses = 1;
-
-        while guesses <= MAX_GUESSES {
-            let mut guess = String::with_capacity(NUM_DIGITS);
-
-            // Keep looping until they enter a valid guess
-            while guess.len() != NUM_DIGITS || guess.parse::<u32>().is_err() {
-                println!("Guess #{guesses}:  ");
-                guess = io::stdin()
-                    .read_line(&mut guess)
-                    .unwrap()
-                    .to_string()
-                    .trim()
-                    .to_string();
-            }
-
-            let clues = get_clues(&guess, &secret);
-            println!("CLUES: {clues}");
-            guesses += 1;
-
-            if guess == secret {
-                break; // They're correct, so break out of this loop.
-            }
-
-            if guesses > MAX_GUESSES {
-                println!("You ran out of guesses.");
-                println!("The answer was {secret}");
-            }
-        }
-
-        // Ask the player if they want to play again.
-        println!("Do you want to play again? (yes or no)");
-        let mut buffer = String::with_capacity(4);
-        let input = io::stdin().read_line(&mut buffer).unwrap().to_string();
-        if !input.to_lowercase().starts_with("y") {
+        if !should_play_again() {
             break;
         }
     }
@@ -73,42 +24,158 @@ For example, if the secret number was 248 and your guess was 843, the clues woul
     println!("Thanks for playing!");
 }
 
+enum Clue {
+    Perfect,
+    NoMatch,
+    Hints { fermis: u8, picos: u8 },
+}
+
+impl fmt::Display for Clue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Perfect => write!(f, "You got it!"),
+            Self::NoMatch => write!(f, "Bagels"),
+            Self::Hints { fermis, picos } => {
+                let mut words = iter::repeat_n("Fermi", *fermis as usize)
+                    .chain(iter::repeat_n("Pico", *picos as usize));
+
+                if let Some(first_word) = words.next() {
+                    write!(f, "{}", first_word)?;
+
+                    for word in words {
+                        write!(f, " {}", word)?;
+                    }
+                }
+
+                Ok(())
+            },
+        }
+    }
+}
+
+fn print_instructions() {
+    println!(
+        "Bagels, a deductive logic game. By Al Sweigart al@inventwithpython.com
+
+I am thinking of a {number}-digit number with no repeated digits.
+Try to guess what it is. Here are some clues:
+When I say:         That means:
+    Pico            One digit is correct but in the wrong position.
+    Fermi           One digit is correct and in the right position.
+    Bagels          No digit is correct.
+
+For example, if the secret number was 248 and your guess was 843, the clues would be Fermi Pico.",
+        number = NUM_DIGITS
+    )
+}
+
+fn play_round() {
+    let secret = generate_secret();
+    println!("I have thought up a number.");
+    println!(" You have {} guesses to get it.", MAX_GUESSES);
+
+    for guess_num in 1..=MAX_GUESSES {
+        let guess = read_valid_guess(guess_num);
+        let clue = generate_clues(&guess, &secret);
+
+        println!("{}", clue);
+
+        if guess == secret {
+            return;
+        }
+    }
+
+    println!("You ran out of guesses.");
+    println!("The answer was {}.", secret);
+}
+
 /// Returns a string made up of NUM_DIGITS unique random digits.
-fn get_secret() -> String {
-    let mut rng = &mut rand::thread_rng();
-    let sample = "0123456789".as_bytes();
-    let secret = sample.choose_multiple(&mut rng, NUM_DIGITS).copied().collect();
-    unsafe { String::from_utf8_unchecked(secret) }
+fn generate_secret() -> String {
+    let mut rng = rand::thread_rng();
+    b"0123456789"
+        .choose_multiple(&mut rng, NUM_DIGITS)
+        .map(|b| *b as char)
+        .collect()
+}
+
+fn read_valid_guess(guess_num: usize) -> String {
+    loop {
+        print!("Guess #{}: ", guess_num);
+        io::stdout().flush().unwrap();
+
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).expect("Failed to read line");
+
+        let guess = input.trim();
+
+        if guess.len() == NUM_DIGITS && guess.chars().all(|c| c.is_ascii_digit()) {
+            return guess.to_string();
+        }
+
+        println!("> Invalid input. Enter exactly {} digits.", NUM_DIGITS);
+    }
 }
 
 /// Returns a string with the pico, fermi, bagels clues for a guess and secret
 /// number pair.
-fn get_clues(guess: &str, secret: &str) -> String {
+fn generate_clues(guess: &str, secret: &str) -> Clue {
     if guess == secret {
-        return "You got it!".to_owned();
+        return Clue::Perfect;
     }
 
-    let (guess, secret) = (guess.as_bytes(), secret.as_bytes());
+    // Bitset for O(1) digit lookups (digits 0-9 map to bits 0-9)
+    let secret_mask = secret
+        .as_bytes()
+        .iter()
+        .fold(0u16, |acc, &b| acc | (1 << (b - b'0')));
 
-    let mut clues = vec![];
+    let (mut fermis, mut picos) = (0, 0);
 
-    for i in 0..guess.len() {
-        if guess[i] == secret[i] {
-            // A correct digit is in the correct place.
-            clues.push("Fermi".to_string());
-        } else if secret.contains(&guess[i]) {
-            // A correct digit is in the incorrect place.
-            clues.push("Pico".to_string());
+    for (g, s) in guess.bytes().zip(secret.bytes()) {
+        if g == s {
+            fermis += 1;
+        } else if secret_mask & (1 << (g - b'0')) != 0 {
+            picos += 1;
         }
     }
 
-    if clues.is_empty() {
-        return "Bagels".to_string(); // There are no correct digits at all.
+    if fermis == 0 && picos == 0 {
+        return Clue::NoMatch;
     }
 
-    // Sort the clues into alphabetical order so their original order doesn't give
-    // information away
-    clues.sort_unstable();
-    // Make a single string from the list of string clues.
-    clues.join(" ")
+    Clue::Hints { fermis, picos }
+}
+
+fn should_play_again() -> bool {
+    print!("Do you want to play again? (yes or no)\n> ");
+    io::stdout().flush().unwrap();
+
+    let mut input = String::with_capacity(4);
+    io::stdin().read_line(&mut input).expect("Failed to read line");
+
+    input.trim().to_lowercase().starts_with('y')
+}
+
+#[allow(unused)]
+#[deprecated]
+fn generate_clues_old(guess: &str, secret: &str) -> Clue {
+    if guess == secret {
+        return Clue::Perfect;
+    }
+
+    let (mut fermis, mut picos) = (0, 0);
+
+    for (g, s) in guess.bytes().zip(secret.bytes()) {
+        if g == s {
+            fermis += 1;
+        } else if secret.contains(g as char) {
+            picos += 1;
+        }
+    }
+
+    if fermis == 0 && picos == 0 {
+        return Clue::NoMatch;
+    }
+
+    Clue::Hints { fermis, picos }
 }
