@@ -5,7 +5,7 @@
 use core::{fmt, iter};
 use std::io::{self, Write};
 
-use rand::prelude::SliceRandom;
+use rand::seq::IndexedRandom;
 
 const NUM_DIGITS: usize = 3; // (!) Try setting this to 1 or 10.
 const MAX_GUESSES: usize = 10; // (!) Try setting this to 1 or 100.
@@ -62,7 +62,7 @@ fn play_round() {
 
 /// Returns a string made up of NUM_DIGITS unique random digits.
 fn generate_secret() -> String {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     b"0123456789"
         .choose_multiple(&mut rng, NUM_DIGITS)
         .map(|b| *b as char)
@@ -74,16 +74,16 @@ fn read_valid_guess(guess_num: usize) -> String {
         print!("Guess #{}: ", guess_num);
         io::stdout().flush().unwrap();
 
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).expect("Failed to read line");
+        let mut buffer = String::new();
+        io::stdin().read_line(&mut buffer).expect("Failed to read line");
 
-        let guess = input.trim();
+        let guess = buffer.trim();
 
         if guess.len() == NUM_DIGITS && guess.chars().all(|c| c.is_ascii_digit()) {
             return guess.to_string();
         }
 
-        println!("> Invalid input. Enter exactly {} digits.", NUM_DIGITS);
+        println!("> Invalid buffer. Enter exactly {} digits.", NUM_DIGITS);
     }
 }
 
@@ -99,11 +99,12 @@ impl fmt::Display for Clue {
             Self::Perfect => write!(f, "You got it!"),
             Self::NoMatch => write!(f, "Bagels"),
             Self::Hints { fermis, picos } => {
-                let mut words = iter::repeat_n("Fermi", *fermis as usize)
-                    .chain(iter::repeat_n("Pico", *picos as usize));
+                let fermis = iter::repeat_n("Fermi", *fermis as usize);
+                let picos = iter::repeat_n("Pico", *picos as usize);
 
-                if let Some(first_word) = words.next() {
-                    write!(f, "{}", first_word)?;
+                let mut words = fermis.chain(picos);
+                if let Some(first) = words.next() {
+                    write!(f, "{}", first)?;
 
                     for word in words {
                         write!(f, " {}", word)?;
@@ -150,10 +151,10 @@ fn should_play_again() -> bool {
     print!("Do you want to play again? (yes or no)\n> ");
     io::stdout().flush().unwrap();
 
-    let mut input = String::with_capacity(4);
-    io::stdin().read_line(&mut input).expect("Failed to read line");
+    let mut buffer = String::with_capacity(4);
+    io::stdin().read_line(&mut buffer).expect("Failed to read line");
 
-    input.trim().to_lowercase().starts_with('y')
+    buffer.trim().to_lowercase().starts_with('y')
 }
 
 #[allow(unused)]
