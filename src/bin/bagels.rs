@@ -24,35 +24,6 @@ fn main() {
     println!("Thanks for playing!");
 }
 
-enum Clue {
-    Perfect,
-    NoMatch,
-    Hints { fermis: u8, picos: u8 },
-}
-
-impl fmt::Display for Clue {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Perfect => write!(f, "You got it!"),
-            Self::NoMatch => write!(f, "Bagels"),
-            Self::Hints { fermis, picos } => {
-                let mut words = iter::repeat_n("Fermi", *fermis as usize)
-                    .chain(iter::repeat_n("Pico", *picos as usize));
-
-                if let Some(first_word) = words.next() {
-                    write!(f, "{}", first_word)?;
-
-                    for word in words {
-                        write!(f, " {}", word)?;
-                    }
-                }
-
-                Ok(())
-            },
-        }
-    }
-}
-
 fn print_instructions() {
     println!(
         "Bagels, a deductive logic game. By Al Sweigart al@inventwithpython.com
@@ -116,6 +87,35 @@ fn read_valid_guess(guess_num: usize) -> String {
     }
 }
 
+enum Clue {
+    Perfect,
+    NoMatch,
+    Hints { fermis: u8, picos: u8 },
+}
+
+impl fmt::Display for Clue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Perfect => write!(f, "You got it!"),
+            Self::NoMatch => write!(f, "Bagels"),
+            Self::Hints { fermis, picos } => {
+                let mut words = iter::repeat_n("Fermi", *fermis as usize)
+                    .chain(iter::repeat_n("Pico", *picos as usize));
+
+                if let Some(first_word) = words.next() {
+                    write!(f, "{}", first_word)?;
+
+                    for word in words {
+                        write!(f, " {}", word)?;
+                    }
+                }
+
+                Ok(())
+            },
+        }
+    }
+}
+
 /// Returns a string with the pico, fermi, bagels clues for a guess and secret
 /// number pair.
 fn generate_clues(guess: &str, secret: &str) -> Clue {
@@ -127,7 +127,7 @@ fn generate_clues(guess: &str, secret: &str) -> Clue {
     let secret_mask = secret
         .as_bytes()
         .iter()
-        .fold(0u16, |acc, &b| acc | (1 << (b - b'0')));
+        .fold(0u16, |acc, &b| acc | (1 << (b - b'0'))); // switches on the correct bit
 
     let (mut fermis, mut picos) = (0, 0);
 
