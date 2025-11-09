@@ -1,0 +1,4 @@
+Bext==0.1.1
+colorama==0.4.5
+pyperclip==1.11.0
+pyttsx3==2.99

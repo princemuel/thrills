@@ -1,7 +1,7 @@
 """Bagels, by Al Sweigart al@inventwithpython.com
 A deductive logic game where you must guess a number based on clues.
-View this code at https://nostarch.com/big-book-small-python-projects
-A version of this game is featured in the book "Invent Your Own
+This code is available at https://nostarch.com/big-book-small-python-programming
+A version of this game is featured in the book, "Invent Your Own
 Computer Games with Python" https://nostarch.com/inventwithpython
 Tags: short, game, puzzle"""
 
@@ -13,44 +13,43 @@ MAX_GUESSES = 10  # (!) Try setting this to 1 or 100.
 
 def main():
     print(
-        """Bagels, a deductive logic game. By Al Sweigart al@inventwithpython.com
+        """Bagels, a deductive logic game.
+By Al Sweigart al@inventwithpython.com
 
 I am thinking of a {}-digit number with no repeated digits.
 Try to guess what it is. Here are some clues:
-When I say:         That means:
-    Pico            One digit is correct but in the wrong position.
-    Fermi           One digit is correct and in the right position.
-    Bagels          No digit is correct.
+When I say:    That means:
+  Pico         One digit is correct but in the wrong position.
+  Fermi        One digit is correct and in the right position.
+  Bagels       No digit is correct.
 
-For example, if the secret number was 248 and your guess was 843, the clues would be Fermi Pico.""".format(
-            NUM_DIGITS
-        )
+For example, if the secret number was 248 and your guess was 843, the
+clues would be Fermi Pico.""".format(NUM_DIGITS)
     )
 
     while True:  # Main game loop.
         # This stores the secret number the player needs to guess:
-        secret = getSecret()
+        secretNum = getSecretNum()
         print("I have thought up a number.")
         print(" You have {} guesses to get it.".format(MAX_GUESSES))
 
-        guesses = 1
-        while guesses <= MAX_GUESSES:
+        numGuesses = 1
+        while numGuesses <= MAX_GUESSES:
             guess = ""
             # Keep looping until they enter a valid guess:
             while len(guess) != NUM_DIGITS or not guess.isdecimal():
-                print("Guess #{}: ".format(guesses))
+                print("Guess #{}: ".format(numGuesses))
                 guess = input("> ")
 
-            clues = getClues(guess, secret)
+            clues = getClues(guess, secretNum)
             print(clues)
-            guesses += 1
+            numGuesses += 1
 
-            if guess == secret:
+            if guess == secretNum:
                 break  # They're correct, so break out of this loop.
-
-            if guesses > MAX_GUESSES:
+            if numGuesses > MAX_GUESSES:
                 print("You ran out of guesses.")
-                print("The answer was {}.".format(secret))
+                print("The answer was {}.".format(secretNum))
 
         # Ask player if they want to play again.
         print("Do you want to play again? (yes or no)")
@@ -59,28 +58,31 @@ For example, if the secret number was 248 and your guess was 843, the clues woul
     print("Thanks for playing!")
 
 
-def getSecret():
+def getSecretNum():
     """Returns a string made up of NUM_DIGITS unique random digits."""
     numbers = list("0123456789")  # Create a list of digits 0 to 9.
     random.shuffle(numbers)  # Shuffle them into random order.
 
     # Get the first NUM_DIGITS digits in the list for the secret number:
-    secret = ""
+    secretNum = ""
     for i in range(NUM_DIGITS):
-        secret += str(numbers[i])
-    return secret
+        secretNum += str(numbers[i])
+    return secretNum
 
 
-def getClues(guess: str, secret: str):
-    """Returns a string with the pico, fermi, bagels clues for a guess and secret number pair."""
-    if guess == secret:
+def getClues(guess, secretNum):
+    """Returns a string with the pico, fermi, bagels clues for a guess
+    and secret number pair."""
+    if guess == secretNum:
         return "You got it!"
+
     clues = []
+
     for i in range(len(guess)):
-        if guess[i] == secret[i]:
+        if guess[i] == secretNum[i]:
             # A correct digit is in the correct place.
             clues.append("Fermi")
-        elif guess[i] in secret:
+        elif guess[i] in secretNum:
             # A correct digit is in the incorrect place.
             clues.append("Pico")
     if len(clues) == 0:
