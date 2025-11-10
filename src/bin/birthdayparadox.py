@@ -4,26 +4,27 @@ More info at https://en.wikipedia.org/wiki/Birthday_problem
 This code is available at https://nostarch.com/big-book-small-python-programming
 Tags: short, math, simulation"""
 
-import datetime
 import random
+from datetime import date, timedelta
+from typing import List
 
 
-def getBirthdays(numberOfBirthdays):
+def getBirthdays(numberOfBirthdays) -> List[date]:
     """Returns a list of number random date objects for birthdays."""
-    birthdays = []
-    for i in range(numberOfBirthdays):
+    birthdays: List[date] = []
+    for _ in range(numberOfBirthdays):
         # The year is unimportant for our simulation, as long as all
         # birthdays have the same year.
-        startOfYear = datetime.date(2001, 1, 1)
+        startOfYear = date(2001, 1, 1)
 
         # Get a random day into the year:
-        randomNumberOfDays = datetime.timedelta(random.randint(0, 364))
+        randomNumberOfDays = timedelta(random.randint(0, 364))
         birthday = startOfYear + randomNumberOfDays
         birthdays.append(birthday)
     return birthdays
 
 
-def getMatch(birthdays):
+def getMatch(birthdays: List[date]):
     """Returns the date object of a birthday that occurs more than once
     in the birthdays list."""
     if len(birthdays) == len(set(birthdays)):
@@ -31,7 +32,7 @@ def getMatch(birthdays):
 
     # Compare each birthday to every other birthday:
     for a, birthdayA in enumerate(birthdays):
-        for b, birthdayB in enumerate(birthdays[a + 1 :]):
+        for _, birthdayB in enumerate(birthdays[a + 1 :]):
             if birthdayA == birthdayB:
                 return birthdayA  # Return the matching birthday.
 

@@ -41,13 +41,13 @@ For example, if the secret number was 248 and your guess was 843, the clues woul
 }
 
 fn play_round() {
-    let secret = generate_secret();
+    let secret = get_secret();
     println!("I have thought up a number.");
     println!(" You have {} guesses to get it.", MAX_GUESSES);
 
     for guess_num in 1..=MAX_GUESSES {
         let guess = read_valid_guess(guess_num);
-        let clue = generate_clues(&guess, &secret);
+        let clue = get_clues(&guess, &secret);
 
         println!("{}", clue);
 
@@ -61,7 +61,7 @@ fn play_round() {
 }
 
 /// Returns a string made up of NUM_DIGITS unique random digits.
-fn generate_secret() -> String {
+fn get_secret() -> String {
     let mut rng = rand::rng();
     b"0123456789"
         .choose_multiple(&mut rng, NUM_DIGITS)
@@ -80,10 +80,10 @@ fn read_valid_guess(guess_num: usize) -> String {
         let guess = buffer.trim();
 
         if guess.len() == NUM_DIGITS && guess.chars().all(|c| c.is_ascii_digit()) {
-            return guess.to_string();
+            return guess.into();
         }
 
-        println!("> Invalid buffer. Enter exactly {} digits.", NUM_DIGITS);
+        println!("> Invalid guess. Enter exactly {} digits.", NUM_DIGITS);
     }
 }
 
@@ -119,7 +119,7 @@ impl fmt::Display for Clue {
 
 /// Returns a string with the pico, fermi, bagels clues for a guess and secret
 /// number pair.
-fn generate_clues(guess: &str, secret: &str) -> Clue {
+fn get_clues(guess: &str, secret: &str) -> Clue {
     if guess == secret {
         return Clue::Perfect;
     }
@@ -128,7 +128,9 @@ fn generate_clues(guess: &str, secret: &str) -> Clue {
     let secret_mask = secret
         .as_bytes()
         .iter()
-        .fold(0u16, |acc, &b| acc | (1 << (b - b'0'))); // switches on the correct bit
+        // flips the relevant bits to one e.g 348 becomes 000000010001100 ?
+        // TODO: should there be a difference between 348, 384, 438, 483, 834, 843?
+        .fold(0u16, |acc, &b| acc | (1 << (b - b'0')));
 
     let (mut fermis, mut picos) = (0, 0);
 
@@ -159,7 +161,7 @@ fn should_play_again() -> bool {
 
 #[allow(unused)]
 #[deprecated]
-fn generate_clues_old(guess: &str, secret: &str) -> Clue {
+fn get_clues_old(guess: &str, secret: &str) -> Clue {
     if guess == secret {
         return Clue::Perfect;
     }

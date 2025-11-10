@@ -56,33 +56,6 @@ That's probably more than you would think!
     Ok(())
 }
 
-fn run_simulations(num_birthdays: u8) -> u32 {
-    println!(
-        "Generating {} random birthdays {} times...",
-        num_birthdays, NUM_SIMULATIONS
-    );
-    println!("Press Enter to begin...");
-    let _ = io::stdin().read_line(&mut String::new());
-
-    let progress_interval = NUM_SIMULATIONS / 100;
-    let mut matches = 0u32;
-    for i in 0..NUM_SIMULATIONS {
-        if i % progress_interval == 0 {
-            println!("{} simulations run...", i);
-        }
-
-        let storage = BirthdayStorage::new(num_birthdays);
-        // Early return in has_duplicate means we stop checking as soon as we find a
-        // match
-        if has_duplicate(storage.as_slice()) {
-            matches += 1;
-        }
-    }
-
-    println!("{} simulations run.", NUM_SIMULATIONS);
-    matches
-}
-
 fn read_num_birthdays() -> io::Result<u8> {
     loop {
         println!("How many birthdays shall I generate? (Max {})", MAX_BIRTHDAYS);
@@ -92,11 +65,11 @@ fn read_num_birthdays() -> io::Result<u8> {
         let mut buffer = String::new();
         io::stdin().read_line(&mut buffer)?;
 
-        if let Ok(num) = buffer.trim().parse()
-            && num > 0
-            && num <= MAX_BIRTHDAYS
+        if let Ok(response) = buffer.trim().parse()
+            && response > 0
+            && response <= MAX_BIRTHDAYS
         {
-            return Ok(num);
+            return Ok(response);
         }
     }
 }
@@ -111,13 +84,24 @@ impl Birthday {
     }
 
     #[inline]
-    fn random() -> Self { Self::new(fastrand::u16(0..DAYS_IN_YEAR)) }
+    #[deprecated]
+    #[allow(unused)]
+    fn randomm() -> Self { Self::new(fastrand::u16(0..DAYS_IN_YEAR)) }
+
+    #[inline]
+    fn random() -> Self {
+        use rand::prelude::IndexedRandom;
+        let mut rng = rand::rng();
+        let days: [usize; DAYS_IN_YEAR as usize] = core::array::from_fn(|i| i);
+
+        Self(days.choose(&mut rng).copied().unwrap_or_default() as u16)
+    }
 
     fn month_day(&self) -> (usize, u8) {
-        const DAYS_IN_MONTH: [u16; 12] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        let days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
         let mut remaining = self.day_of_year();
-        for (month, &days) in DAYS_IN_MONTH.iter().enumerate() {
+        for (month, &days) in days_in_month.iter().enumerate() {
             if remaining < days {
                 return (month, (remaining + 1) as u8);
             }
@@ -163,6 +147,36 @@ impl BirthdayStorage {
             Self::Heap(vec) => vec.as_slice(),
         }
     }
+}
+
+fn run_simulations(num_birthdays: u8) -> u32 {
+    println!(
+        "Generating {n} random birthdays {s} times...",
+        n = num_birthdays,
+        s = NUM_SIMULATIONS
+    );
+
+    println!("Press Enter to begin...");
+    let _ = io::stdin().read_line(&mut String::new());
+
+    let progress_interval = NUM_SIMULATIONS / 100;
+
+    let mut matches = 0u32;
+    for n in 0..NUM_SIMULATIONS {
+        if n % progress_interval == 0 {
+            println!("{n} simulations run...");
+        }
+
+        let storage = BirthdayStorage::new(num_birthdays);
+        // Early return in has_duplicate means we stop checking as soon as we find a
+        // match
+        if has_duplicate(storage.as_slice()) {
+            matches += 1;
+        }
+    }
+
+    println!("{} simulations run.", NUM_SIMULATIONS);
+    matches
 }
 
 fn has_duplicate(birthdays: &[Birthday]) -> bool { find_duplicate(birthdays).is_some() }
