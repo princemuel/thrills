@@ -4,5 +4,5 @@
   edition = "2024"
 
 [dependencies]
-  itertools = "0.14"
   rand = "0.9"
+unicode-segmentation = "1.12.0"

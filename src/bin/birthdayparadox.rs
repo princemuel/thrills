@@ -1,3 +1,9 @@
+//! Birthday Paradox Simulation, by Prince Muel info@princemuel.dev
+//! Explore the surprising probabilities of the "Birthday Paradox".
+//! More info at https://en.wikipedia.org/wiki/Birthday_problem
+//! This code is available at https://github.com/princemuel/thrills
+//! Tags: short, math, simulation
+
 use std::io::{self, Write};
 
 const MONTHS: [&str; 12] = [
@@ -9,7 +15,7 @@ const DAYS_IN_YEAR: u16 = 365;
 
 fn main() -> io::Result<()> {
     println!(
-        "Birthday Paradox, by Al Sweigart al@inventwithpython.com
+        "Birthday Paradox, by Prince Muel info@princemuel.dev
 
 The Birthday Paradox shows us that in a group of N people,
 the odds that two of them have matching birthdays is surprisingly large.

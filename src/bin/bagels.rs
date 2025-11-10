@@ -1,5 +1,7 @@
-//! Bagels, by Prince Muel sam@princemuel.dev
+//! Bagels, by Prince Muel info@princemuel.dev
 //! A deductive logic game where you must guess a number based on clues.
+//! This code is available at https://github.com/princemuel/thrills
+//! A version of this game is featured in the book, "Invent Your Own Computer Games with Python" https://nostarch.com/inventwithpython
 //! Tags: short, game, puzzle
 
 use core::{fmt, iter};
@@ -26,7 +28,7 @@ fn main() {
 
 fn print_instructions() {
     println!(
-        "Bagels, a deductive logic game. By Al Sweigart al@inventwithpython.com
+        "Bagels, a deductive logic game. By Prince Muel info@princemuel.dev
 
 I am thinking of a {number}-digit number with no repeated digits.
 Try to guess what it is. Here are some clues:
