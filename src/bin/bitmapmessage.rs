@@ -34,17 +34,21 @@ fn main() -> io::Result<()> {
     println!("Enter the message to display with the bitmap.");
 
     let message = read_line()?;
-    let message = message.trim();
 
-    let graphemes: Vec<&str> = UnicodeSegmentation::graphemes(message, true).collect();
-    let n = graphemes.len();
+    let message: Vec<_> = UnicodeSegmentation::graphemes(message.trim(), true).collect();
+    // let mut symbols = graphemes.iter().cycle();
+    let n = message.len();
 
     for line in BITMAP.lines() {
+        // TODO: there should be a way to
+
         for (i, bit) in line.char_indices() {
             if bit == ' ' {
                 print!(" ");
             } else {
-                print!("{}", graphemes[i % n]);
+                print!("{}", message[i % n]);
+                // avoids bounds checking
+                // print!("{}", symbols.next().unwrap());
             }
         }
 
